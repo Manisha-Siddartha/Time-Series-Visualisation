@@ -1,5 +1,5 @@
 # Time-Series-Visualisation
-                                           ## Time Series Visualization Project Report
+                                           Time Series Visualization Project Report
 
 This project is used to retrieve the unemployment rates of various states in US over a particular period of time. Initially the data for the unemployment rates has been collected from the BLS website and filtered to get the useful data which has been stored as csv file. Later the csv file has been given as the input to the program to get a graph of all the states in US with Unemployment rate on the Y-axis and years on the x-axis
 
