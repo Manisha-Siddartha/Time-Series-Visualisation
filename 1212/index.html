@@ -1,0 +1,256 @@
+
+<head>
+  <title>Protein Interaction Network-Lung Cancer</title>
+  <meta charset="utf-8" />
+</head>
+<script src="scripts/d3.v3.min.js" ></script>
+<script src="scripts/queue.v1.min.js" type="text/javascript"></script>
+<script src="scripts/genomics.js" type="text/javascript"></script >
+<script src="javascripts/fisheye.js" type="text/javascript"></script>
+<script src="scripts/ParseData.js" type="text/javascript"></script>
+<script src="rose_chart/rose.js" type="text/javascript"></script>
+<script type="text/javascript" src="rose_chart/script.js"></script>
+<script type="text/javascript" src="bar1.js"></script>
+<link rel="stylesheet" type="text/css" href="rose_chart/reset.css">
+<link rel="stylesheet" type="text/css" href="rose_chart/style.css">
+<link href="bootstrap.min.css" rel="stylesheet">
+<link href="freelancer.min.css" rel="stylesheet">
+
+<style>
+
+.axis {
+	  font: 10px sans-serif;
+	}
+
+	.axis path,
+	.axis line {
+	  fill: none;
+	  stroke: #000;
+	  shape-rendering: crispEdges;
+	}
+
+#vizcontainer { 
+    width: 100%;
+}
+#sidebar    {
+   max-width: 650px;
+    height: 600px;
+    float: left;
+}
+
+#page-wrap  {
+  
+  margin-left: 900px;
+}
+.tick line {
+  shape-rendering: crispEdges;
+  stroke: #000;
+}
+line.minor  {
+  stroke: #777;
+  stroke-dasharray: 2,2;
+}
+path.domain {
+  fill: none;
+  stroke: black;
+}
+svg {
+    font: 10px sans-serif;
+    shape-rendering: crispEdges;
+  }
+
+  .axis path,
+  .axis line {
+    fill: none;
+    stroke: #000;
+  }
+ 
+  path.domain {
+    stroke: none;
+  }
+ 
+  .y .tick line {
+    stroke: #ddd;
+  }
+</style>
+<body onload="loaddata();" id="page-top" class="index">
+<!-- Navigation -->
+    <nav id="mainNav" class="navbar navbar-default navbar-fixed-top navbar-custom">
+        <div class="container">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header page-scroll">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span> Menu <i class="fa fa-bars"></i>
+                </button>
+                <a class="navbar-brand">Protein Interaction Network-Lung Cancer</a>
+            </div>
+
+         </div>
+        <!-- /.container-fluid -->
+    </nav>
+    <br><br><br><br><br><br>
+
+<div id="vizcontainer">
+<div id="sidebar">
+<svg id="some" style="width:600px;height:600px;border:1px lightgray solid;" />
+</div>
+<div id="page-wrap">
+</select>
+</div>
+</div>
+  <footer>
+<script>
+  adjacency();
+  function adjacency() {
+   queue()
+    .defer(d3.csv, "nodelist.csv")
+    .defer(d3.csv, "edgelist.csv")
+    .await(function(error, file1, file2) { createAdjacencyMatrix(file1, file2); });
+   function createAdjacencyMatrix(nodes,edges) {
+      var edgeHash = {};
+      for (x in edges) {
+        var id = edges[x].source + "-" + edges[x].target;
+        edgeHash[id] = edges[x];
+      }
+      matrix = [];
+      //create all possible edges
+      for (a in nodes) {
+        for (b in nodes) {
+          var grid = {id: nodes[a].id + "-" + nodes[b].id, x: b, y: a, weight_a: parseInt(edges[a].weight), weight_b: parseInt(edges[b].weight), weight: parseInt(edges[a].weight)+parseInt(edges[b].weight) };
+          if (edgeHash[grid.id]) {
+            grid.weight =parseInt(edgeHash[grid.id].weight);
+          }
+          //console.log(grid.weight);
+          matrix.push(grid);
+          //console.log(matrix);
+        }
+      }
+      
+      
+
+      d3.select("svg")
+      .append("g")
+      .attr("transform", "translate(45,45)")
+      .attr("id", "adjacencyG")
+      .selectAll("rect")
+      .data(matrix)
+      .enter()
+      .append("rect")
+      .attr("class","inside")
+      .attr("width", 55)
+      .attr("height", 55)
+      .attr("x", function (d) {return d.x * 55})
+      .attr("y", function (d) {return d.y * 55})
+      .html("helloworld")
+      .attr("id", "i")
+      .style("stroke", "black")
+      .style("stroke-width", "1px")
+      .style("fill", "white")
+      .style("fill-opacity", function (d) {return d.weight * 0.01})
+      .on("mouseover", gridOver)
+      .on("dblclick",draw_rose)
+      .on("click",clicked)
+      .append("title")
+      .text(function(d){return "frequency of "+d.id+" : "+d.weight_a+"-"+d.weight_b});
+
+ /*       d3.selectAll(".inside")
+        .append("text")
+        .text("olala olala")
+        .attr("x", function () {
+        return 10;
+      })
+      .attr("y", function () {
+        return 10;
+      });
+*/
+      var scaleSize = nodes.length * 55;
+      var nameScale = d3.scale.ordinal().domain(nodes.map(function (el) {return el.id})).rangePoints([0,scaleSize],1);
+      
+      xAxis = d3.svg.axis().scale(nameScale).orient("top").tickSize(2);    
+      yAxis = d3.svg.axis().scale(nameScale).orient("left").tickSize(2);    
+      d3.select("#adjacencyG").append("g").call(xAxis).selectAll("text").style("text-anchor", "end").attr("transform", "translate(-10,-10) rotate(90)");
+      d3.select("#adjacencyG").append("g").call(yAxis);
+      
+      function gridOver(d,i) {
+		    
+        
+        //draw_rose();
+        d3.selectAll("rect").style("stroke-width", function (p) {return p.x == d.x || p.y == d.y ? "3px" : "1px"})
+      }
+	  function clicked(d){
+      d3.selectAll("figure").remove();
+      d3.selectAll("h2.title").remove();
+      d3.selectAll("svg.legend-canvas").remove();
+      d3.selectAll("input.slider").remove();
+      d3.selectAll("div.legend").remove();
+		data=[];
+		
+    var value=d.id.split("-");
+        var source=value[0],target=value[1];
+        generatedataset(source,target);
+		  
+      /*var data=[
+       {    "date": "4/1854", "army_size": 8571, "disease": 1,"wounds": 0,"other": 5 },
+         {    "date": "5/1854", "army_size": 23333, "disease": 12, "wounds": 0, "other": 9 },
+       {    "date": "6/1854",  "army_size": 28333,  "disease": 11, "wounds": 0,  "other": 6 },
+         {    "date": "7/1854",   "army_size": 28722,  "disease": 359,  "wounds": 0, "other": 23  },
+        {    "date": "8/1854",   "army_size": 30246,   "disease": 828,  "wounds": 1, "other": 30  },
+       {    "date": "9/1854",  "army_size": 30290,  "disease": 788,  "wounds": 81,  "other": 70  },
+        {    "date": "10/1854",   "army_size": 30643, "disease": 503,  "wounds": 132, "other": 128 },
+        {    "date": "11/1854",   "army_size": 29736, "disease": 844,  "wounds": 287, "other": 106  },
+        {    "date": "12/1854",   "army_size": 32779, "disease": 1725,  "wounds": 114,  "other": 131 },
+            {    "date": "1/1855", "army_size": 32393,  "disease": 2761, "wounds": 83, "other": 324 },
+        {    "date": "2/1855",  "army_size": 30919,  "disease": 2120,  "wounds": 42, "other": 361   },
+       {  "date": "3/1855",  "army_size": 30107,  "disease": 1205, "wounds": 32, "other": 172   }
+       ];*/
+      DrawGraph(data,source,target);
+	  }
+	  
+    }
+    
+  }
+  setTimeout(function(d){draw_rose(); },10000);
+  
+  
+  //function chart1()
+//{ 
+  
+  
+function updateNodeColors(){
+	var maxAlter = 0;
+    for (key in cBioPortalData) {
+      if (cBioPortalData[key].altered > maxAlter)
+      	maxAlter = cBioPortalData[key].altered;
+    }
+
+    if (maxAlter>0){
+   		var sc = d3.scale.linear()
+	      .domain([0, maxAlter])
+	      .range([222, 0]);
+
+	    svg2.selectAll(".node")
+	      .style("fill" , function(d){
+	        if (cBioPortalData[d.ref.fields.entity_text]){
+	       		if (cBioPortalData[d.ref.fields.entity_text].altered>=0) {	
+		          var altered = cBioPortalData[d.ref.fields.entity_text].altered;
+		          var sat = Math.floor(sc(altered));
+		          console.log("Protein: "+d.ref.fields.entity_text+" altered="+altered+"sat="+sat+" maxAlter"+maxAlter);
+		          return "rgb("+222+", "+sat+", "+222+")" ;
+	          	}
+	          	else
+	          	  return "rgb("+240+", "+240+", "+240+")" ;
+	        }  
+	        else
+	          return "rgb("+0+", "+0+", "+200+")" ;
+	    });  
+    } 
+}
+
+//console.log("xsxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+//var obj = {age: 20 ,count: 2};
+
+  </script>
+  </footer>
+
+</body>
+</html>
